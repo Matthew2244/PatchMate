@@ -1,0 +1,44 @@
+{
+  "name": "patchmate",
+  "version": "1.0.0",
+  "description": "Accessible web-based MIDI control interface for Roland and BOSS musical devices",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000 || python -m SimpleHTTPServer 8000",
+    "dev": "./dev-server.sh"
+  },
+  "keywords": ["midi", "roland", "boss", "music", "accessibility"],
+  "author": "Your Name",
+  "license": "MIT"
+}
+PKGEOF
+
+cat > README.md << 'READMEEOF'
+# PatchMate 🎵
+
+**Roland & BOSS Device Control Interface**
+
+An accessible, web-based MIDI control interface for Roland and BOSS musical devices.
+
+## ✨ Features
+
+- 🎹 **Auto-device detection** for Roland/BOSS equipment
+- 🎛️ **Real-time MIDI control** with sliders and manual input
+- 📋 **Patch management** with file import support
+- ♿ **Full accessibility** with high contrast and speech synthesis
+- 📱 **Responsive design** for desktop and mobile
+
+## 🚀 Quick Start
+
+1. **Connect your Roland/BOSS device** via USB or MIDI
+2. **Open index.html** in Chrome or Edge (WebMIDI required)
+3. **Allow MIDI access** when prompted
+4. **Select your device** and start controlling!
+
+## 🛠️ Development
+
+```bash
+# Start development server
+./dev-server.sh
+# or
+python3 -m http.server 8000

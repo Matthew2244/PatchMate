@@ -1,0 +1,324 @@
+<!DOTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PatchMate - Roland & BOSS Access Control</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.3/babel.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0; padding: 0; min-height: 100vh; overscroll-behavior: none;
+    }
+    .app-container { min-height: 100vh; display: flex; flex-direction: column; }
+    .header {
+      background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+      padding: 1rem; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .header h1 {
+      color: white; margin: 0; font-size: 2.5rem; font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 2rem; flex: 1; }
+    .controls-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem; margin-bottom: 2rem;
+    }
+    .control-card {
+      background: rgba(255, 255, 255, 0.95); border-radius: 16px; padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .control-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); }
+    .card-title {
+      font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem; color: #333;
+      border-bottom: 2px solid #667eea; padding-bottom: 0.5rem;
+    }
+    button, select, input[type="number"], input[type="range"], input[type="file"] {
+      width: 100%; padding: 1rem; margin: 0.5rem 0; font-size: 1.1rem;
+      border: 2px solid #ddd; border-radius: 12px; background-color: #fff;
+      color: #333; transition: all 0.3s ease; touch-action: manipulation; cursor: pointer;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white; font-weight: 600; border: none;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    button:focus, select:focus, input:focus { outline: 3px solid #667eea; outline-offset: 2px; }
+    .status {
+      font-size: 1.1rem; margin: 1rem 0; padding: 1rem;
+      background: rgba(255, 255, 255, 0.9); border-radius: 12px;
+      font-weight: 500; border-left: 4px solid #667eea;
+    }
+    .status.error { border-left-color: #e74c3c; background: rgba(231, 76, 60, 0.1); color: #c0392b; }
+    .status.success { border-left-color: #27ae60; background: rgba(39, 174, 96, 0.1); color: #1e8449; }
+    .device-list { max-height: 200px; overflow-y: auto; margin: 1rem 0; }
+    .device-item {
+      padding: 0.75rem; margin: 0.5rem 0; background: rgba(255, 255, 255, 0.7);
+      border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid transparent;
+    }
+    .device-item:hover { background: rgba(102, 126, 234, 0.1); border-color: #667eea; }
+    .device-item.selected { background: rgba(102, 126, 234, 0.2); border-color: #667eea; font-weight: 600; }
+    .slider-container { margin: 1rem 0; }
+    .slider-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-weight: 500; }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none; height: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 4px; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+      background: white; border: 3px solid #667eea; border-radius: 50%;
+      cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .accessibility-controls {
+      position: fixed; top: 1rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 1000;
+    }
+    .accessibility-btn {
+      width: auto; padding: 0.5rem 1rem; margin: 0; font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.9); color: #333; border: 1px solid #ddd;
+    }
+    .high-contrast { background: #000 !important; color: #fff !important; }
+    .high-contrast .control-card { background: #222 !important; color: #fff !important; border-color: #fff !important; }
+    .high-contrast button { background: #fff !important; color: #000 !important; }
+    .high-contrast .card-title { color: #fff !important; border-bottom-color: #fff !important; }
+    .patch-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem; margin-top: 1rem;
+    }
+    .patch-item {
+      background: rgba(255, 255, 255, 0.9); padding: 1rem; border-radius: 8px;
+      cursor: pointer; transition: all 0.3s ease; text-align: center;
+    }
+    .patch-item:hover { background: rgba(102, 126, 234, 0.1); transform: translateY(-2px); }
+    @media (max-width: 768px) {
+      .container { padding: 1rem; }
+      .controls-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .header h1 { font-size: 2rem; }
+      .accessibility-controls { position: relative; top: auto; right: auto; justify-content: center; margin-bottom: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const PatchMate = () => {
+      const [deviceStatus, setDeviceStatus] = useState('Initializing...');
+      const [selectedDevice, setSelectedDevice] = useState(null);
+      const [devices, setDevices] = useState([]);
+      const [highContrast, setHighContrast] = useState(false);
+      const [speechEnabled, setSpeechEnabled] = useState(true);
+      const [patches, setPatches] = useState([]);
+      const [currentPatch, setCurrentPatch] = useState(null);
+      const [parameter, setParameter] = useState('');
+      const [value, setValue] = useState(0);
+      const [sliderValue, setSliderValue] = useState(64);
+      const fileInputRef = useRef(null);
+
+      const speak = (text) => {
+        if (speechEnabled && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.8; utterance.pitch = 1;
+          speechSynthesis.speak(utterance);
+        }
+      };
+
+      useEffect(() => {
+        const initializeWebMIDI = async () => {
+          try {
+            if (!navigator.requestMIDIAccess) throw new Error('WebMIDI not supported in this browser');
+            const midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+            const deviceList = [];
+            
+            midiAccess.inputs.forEach(input => {
+              if (input.manufacturer?.toLowerCase().includes('roland') || 
+                  input.name?.toLowerCase().includes('boss') || 
+                  input.name?.toLowerCase().includes('roland')) {
+                deviceList.push({
+                  id: input.id, name: input.name, manufacturer: input.manufacturer,
+                  input: input, type: 'input'
+                });
+              }
+            });
+            
+            midiAccess.outputs.forEach(output => {
+              if (output.manufacturer?.toLowerCase().includes('roland') || 
+                  output.name?.toLowerCase().includes('boss') || 
+                  output.name?.toLowerCase().includes('roland')) {
+                const existingDevice = deviceList.find(d => d.name === output.name);
+                if (existingDevice) {
+                  existingDevice.output = output;
+                } else {
+                  deviceList.push({
+                    id: output.id, name: output.name, manufacturer: output.manufacturer,
+                    output: output, type: 'output'
+                  });
+                }
+              }
+            });
+            
+            setDevices(deviceList);
+            if (deviceList.length > 0) {
+              const status = `Found ${deviceList.length} Roland/BOSS device(s)`;
+              setDeviceStatus(status); speak(status);
+            } else {
+              const status = 'No Roland/BOSS devices found. Please connect your device and refresh.';
+              setDeviceStatus(status); speak(status);
+            }
+          } catch (error) {
+            const status = `MIDI initialization failed: ${error.message}`;
+            setDeviceStatus(status); speak(status); console.error('MIDI Error:', error);
+          }
+        };
+        initializeWebMIDI();
+      }, [speechEnabled]);
+
+      const sendMIDICC = (cc, value, channel = 0) => {
+        if (!selectedDevice?.output) { speak('No device selected for output'); return; }
+        try {
+          selectedDevice.output.send([0xB0 + channel, cc, value]);
+          speak(`Sent CC ${cc} value ${value}`);
+        } catch (error) {
+          speak(`Failed to send MIDI: ${error.message}`);
+          console.error('MIDI Send Error:', error);
+        }
+      };
+
+      const sendProgramChange = (program, channel = 0) => {
+        if (!selectedDevice?.output) { speak('No device selected for output'); return; }
+        try {
+          selectedDevice.output.send([0xC0 + channel, program]);
+          speak(`Program change to ${program}`);
+        } catch (error) { speak(`Failed to send program change: ${error.message}`); }
+      };
+
+      const selectDevice = (device) => { setSelectedDevice(device); speak(`Selected device: ${device.name}`); };
+
+      const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            let data;
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+              const workbook = XLSX.read(e.target.result, { type: 'binary' });
+              const sheetName = workbook.SheetNames[0];
+              data = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            } else if (file.name.endsWith('.json')) {
+              data = JSON.parse(e.target.result);
+            }
+            setPatches(data || []); speak(`Loaded ${data?.length || 0} patches from file`);
+          } catch (error) { speak(`Failed to load file: ${error.message}`); }
+        };
+        if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+          reader.readAsBinaryString(file);
+        } else { reader.readAsText(file); }
+      };
+
+      const loadSamplePatches = () => {
+        const samplePatches = [
+          { name: 'Clean Jazz', program: 0, reverb: 40, chorus: 20, gain: 30 },
+          { name: 'Rock Crunch', program: 15, reverb: 25, chorus: 0, gain: 80 },
+          { name: 'Blues Lead', program: 8, reverb: 60, chorus: 15, gain: 65 },
+          { name: 'Ambient Pad', program: 88, reverb: 100, chorus: 50, gain: 45 },
+          { name: 'Funk Clean', program: 2, reverb: 20, chorus: 30, gain: 55 }
+        ];
+        setPatches(samplePatches); speak(`Loaded ${samplePatches.length} sample patches`);
+      };
+
+      const applyPatch = (patch) => {
+        if (!selectedDevice?.output) { speak('No device selected'); return; }
+        setCurrentPatch(patch);
+        if (patch.program !== undefined) sendProgramChange(patch.program);
+        setTimeout(() => { if (patch.reverb !== undefined) sendMIDICC(91, patch.reverb); }, 50);
+        setTimeout(() => { if (patch.chorus !== undefined) sendMIDICC(93, patch.chorus); }, 100);
+        setTimeout(() => { if (patch.gain !== undefined) sendMIDICC(7, patch.gain); }, 150);
+        speak(`Applied patch: ${patch.name}`);
+      };
+
+      return (
+        <div className={`app-container ${highContrast ? 'high-contrast' : ''}`}>
+          <div className="accessibility-controls">
+            <button className="accessibility-btn" onClick={() => setHighContrast(!highContrast)} aria-label="Toggle high contrast mode">
+              {highContrast ? '🌞' : '🌙'} Contrast
+            </button>
+            <button className="accessibility-btn" onClick={() => setSpeechEnabled(!speechEnabled)} aria-label="Toggle speech synthesis">
+              {speechEnabled ? '🔊' : '🔇'} Speech
+            </button>
+          </div>
+          <div className="header">
+            <h1>PatchMate</h1>
+            <p style={{color: 'rgba(255,255,255,0.9)', margin: '0.5rem 0 0 0'}}>Roland & BOSS Device Control</p>
+          </div>
+          <div className="container">
+            <div className="controls-grid">
+              <div className="control-card">
+                <h2 className="card-title">🎹 Device Selection</h2>
+                <div className={`status ${devices.length > 0 ? 'success' : 'error'}`}>{deviceStatus}</div>
+                <div className="device-list">
+                  {devices.map(device => (
+                    <div key={device.id} className={`device-item ${selectedDevice?.id === device.id ? 'selected' : ''}`} onClick={() => selectDevice(device)}>
+                      <strong>{device.name}</strong><br/>
+                      <small>{device.manufacturer} • {device.input && device.output ? 'I/O' : device.input ? 'Input' : 'Output'}</small>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => window.location.reload()}>🔄 Refresh Devices</button>
+              </div>
+              <div className="control-card">
+                <h2 className="card-title">🎛️ Manual Control</h2>
+                <input type="number" placeholder="CC Parameter (0-127)" value={parameter} onChange={(e) => setParameter(e.target.value)} min="0" max="127" />
+                <input type="number" placeholder="Value (0-127)" value={value} onChange={(e) => setValue(e.target.value)} min="0" max="127" />
+                <button onClick={() => sendMIDICC(parseInt(parameter), parseInt(value))} disabled={!selectedDevice?.output || !parameter}>Send CC Message</button>
+                <div className="slider-container">
+                  <div className="slider-label"><span>Quick Control</span><span>{sliderValue}</span></div>
+                  <input type="range" min="0" max="127" value={sliderValue} onChange={(e) => { setSliderValue(e.target.value); sendMIDICC(7, parseInt(e.target.value)); }} />
+                </div>
+              </div>
+              <div className="control-card">
+                <h2 className="card-title">📋 Patch Library</h2>
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".json,.xlsx,.xls,.csv" style={{display: 'none'}} />
+                <button onClick={() => fileInputRef.current?.click()}>📁 Load Patch File</button>
+                <button onClick={loadSamplePatches}>🎵 Load Sample Patches</button>
+                {currentPatch && <div className="status success">Current: {currentPatch.name}</div>}
+                <div className="patch-grid">
+                  {patches.slice(0, 8).map((patch, index) => (
+                    <div key={index} className="patch-item" onClick={() => applyPatch(patch)}>
+                      <strong>{patch.name}</strong><br/><small>Program: {patch.program}</small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="control-card">
+              <h2 className="card-title">⚡ Quick Actions</h2>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem'}}>
+                <button onClick={() => sendMIDICC(7, 0)}>🔇 Mute</button>
+                <button onClick={() => sendMIDICC(7, 100)}>🔊 Max Volume</button>
+                <button onClick={() => sendMIDICC(91, 0)}>🚫 No Reverb</button>
+                <button onClick={() => sendMIDICC(91, 127)}>🌊 Max Reverb</button>
+                <button onClick={() => sendMIDICC(93, 0)}>🚫 No Chorus</button>
+                <button onClick={() => sendMIDICC(93, 127)}>✨ Max Chorus</button>
+                <button onClick={() => sendProgramChange(0)}>🎸 Program 1</button>
+                <button onClick={() => { for(let i = 0; i < 128; i++) { setTimeout(() => sendMIDICC(i, 0), i * 10); } speak('All parameters reset'); }}>🔄 Reset All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    ReactDOM.render(<PatchMate />, document.getElementById('root'));
+  </script>
+</body>
+</html>
