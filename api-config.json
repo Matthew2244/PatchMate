@@ -1,0 +1,60 @@
+{
+  "name": "PatchMate",
+  "version": "1.0.0",
+  "api": {
+    "endpoints": {
+      "base": "https://files.devinecreations.net:3924/patchmate/",
+      "api": "https://files.devinecreations.net:3924/patchmate/api/",
+      "websocket": "wss://files.devinecreations.net:3924/patchmate/ws/",
+      "openlink": "https://openlink.devinecreations.net/api/patchmate/",
+      "updates": "https://files.devinecreations.net:3924/patchmate/updates/",
+      "downloads": "https://files.devinecreations.net:3924/patchmate/downloads/"
+    },
+    "authentication": {
+      "type": "basic",
+      "username": "patchmate",
+      "passwordEnvVar": "PATCHMATE_API_PASSWORD"
+    },
+    "github": {
+      "webhook": "https://files.devinecreations.net:3924/patchmate/api/webhook/github",
+      "repository": "https://github.com/Matthew2244/PatchMate.git",
+      "branch": "main",
+      "tokenEnvVar": "GITHUB_TOKEN"
+    },
+    "copyparty": {
+      "server": "https://files.devinecreations.net:3924/",
+      "volumes": [
+        "/shared/",
+        "/apps-devinecr/",
+        "/patchmate/"
+      ]
+    },
+    "hubnode": {
+      "integration": true,
+      "monitor": "https://files.devinecreations.net:3924/api-monitor/",
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30,
+        "endpoint": "/health"
+      }
+    }
+  },
+  "deployment": {
+    "localPath": "/home/devinecr/apps/patchmate-deployment/",
+    "backupPath": "/home/devinecr/apps/patchmate-deployment-backup/",
+    "syncScript": "/home/devinecr/apps/hubnode/scripts/patchmate-auto-sync.sh",
+    "logFile": "/var/log/patchmate-sync.log"
+  },
+  "environment": {
+    "production": {
+      "PATCHMATE_API_URL": "https://files.devinecreations.net:3924/patchmate/api/",
+      "PATCHMATE_WS_URL": "wss://files.devinecreations.net:3924/patchmate/ws/",
+      "PATCHMATE_UPDATE_URL": "https://files.devinecreations.net:3924/patchmate/updates/"
+    },
+    "development": {
+      "PATCHMATE_API_URL": "http://localhost:3002/api/",
+      "PATCHMATE_WS_URL": "ws://localhost:3002/ws/",
+      "PATCHMATE_UPDATE_URL": "http://localhost:3002/updates/"
+    }
+  }
+}
