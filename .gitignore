@@ -1,0 +1,48 @@
+# PatchMate Repository .gitignore
+
+# Private access files (contains sensitive credentials)
+private-access/
+*.private
+*.secrets
+*.credentials
+
+# API keys and tokens
+*.token
+api-keys/
+secrets/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Backup files
+*-backup/
+backup-*/
+*.backup
+
+# Node modules (if any)
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Local configuration
+config.local.*
+settings.local.*
+
+# Sync status files (auto-generated)
+CURRENT_SYNC_STATUS.md
+version.json
