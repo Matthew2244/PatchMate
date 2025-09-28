@@ -3,17 +3,22 @@
   "version": "1.0.0",
   "api": {
     "endpoints": {
-      "base": "https://files.devinecreations.net:3924/patchmate/",
-      "api": "https://files.devinecreations.net:3924/patchmate/api/",
-      "websocket": "wss://files.devinecreations.net:3924/patchmate/ws/",
+      "base": "https://files.devinecreations.net:3924/apps-devinecr/patchmate-deployment/",
+      "api": "https://files.devinecreations.net:3924/apps-devinecr/patchmate-deployment/api/",
+      "websocket": "wss://files.devinecreations.net:3924/apps-devinecr/patchmate-deployment/ws/",
       "openlink": "https://openlink.devinecreations.net/api/patchmate/",
-      "updates": "https://files.devinecreations.net:3924/patchmate/updates/",
-      "downloads": "https://files.devinecreations.net:3924/patchmate/downloads/"
+      "updates": "https://files.devinecreations.net:3924/apps-devinecr/patchmate-deployment/updates/",
+      "downloads": "https://files.devinecreations.net:3924/apps-devinecr/patchmate-deployment/downloads/",
+      "legacy_patchmate": "https://files.devinecreations.net:3924/patchmate/"
     },
     "authentication": {
       "type": "basic",
-      "username": "patchmate",
-      "passwordEnvVar": "PATCHMATE_API_PASSWORD"
+      "username": "devinecr",
+      "password": "devinecreat-files-2024",
+      "fallback": {
+        "username": "patchmate",
+        "password": "patchmate-app-2025"
+      }
     },
     "github": {
       "webhook": "https://files.devinecreations.net:3924/patchmate/api/webhook/github",
